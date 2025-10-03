@@ -40,7 +40,7 @@ html, body, #root {
 .glass-card {
   background: #ffffff;
   border: 1px solid #ffe4c7;
-  box-shadow: 0 8px 22px rgba(253, 186, 116, 0.25);
+  box-shadow: 0 8px 22px rgba(253, 186, 116, 0.2), 0 1px 0 rgba(0,0,0,0.02) inset;
   border-radius: 14px;
 }
 

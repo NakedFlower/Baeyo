@@ -34,9 +34,9 @@ export default function Login() {
   };
 
   return (
-    <Space direction="vertical" size={16} style={{ width: "100%" }}>
+    <Space direction="vertical" size={16} style={{ width: "100%", maxWidth: 520, margin: "0 auto", padding: "0 16px" }}>
       <Title level={3} className="section-title">로그인</Title>
-      <Form layout="vertical" onFinish={onFinish} className="glass-card">
+      <Form layout="vertical" onFinish={onFinish} className="glass-card" style={{ padding: 16 }}>
         <Form.Item name="email" label="이메일" rules={[{ required: true, message: "이메일을 입력하세요" }, { type: 'email', message: '이메일 형식이 아닙니다' }]}>
           <Input placeholder="you@example.com" />
         </Form.Item>

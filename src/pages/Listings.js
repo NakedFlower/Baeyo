@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, Input, Tag, Row, Col, Empty, Space, Typography, Skeleton } from "antd";
+import { Card, Input, Tag, Row, Col, Empty, Space, Typography, Skeleton, Image } from "antd";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -45,7 +45,12 @@ export default function Listings() {
         <Row gutter={[16, 16]}>
           {filtered.map((p) => (
             <Col xs={24} sm={12} md={8} lg={6} key={p.id}>
-              <Card title={p.name} className="glass-card" extra={<Tag color="green">모집중</Tag>}>
+              <Card
+                className="glass-card"
+                cover={p.cover ? <img alt={p.name} src={p.cover} style={{ height: 160, objectFit: 'cover' }} /> : null}
+                title={p.name}
+                extra={<Tag color="green">모집중</Tag>}
+              >
                 <Space direction="vertical" size={8}>
                   <Text type="secondary">작성자: {p.createdBy}</Text>
                   {/* 확장: 가격, 마감시간, 위치 등 */}

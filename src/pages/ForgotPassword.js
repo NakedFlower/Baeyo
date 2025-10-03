@@ -20,9 +20,9 @@ export default function ForgotPassword() {
   };
 
   return (
-    <Space direction="vertical" size={16} style={{ width: "100%" }}>
+    <Space direction="vertical" size={16} style={{ width: "100%", maxWidth: 520, margin: "0 auto", padding: "0 16px" }}>
       <Title level={3} className="section-title">비밀번호 찾기</Title>
-      <Form layout="vertical" onFinish={onFinish} className="glass-card">
+      <Form layout="vertical" onFinish={onFinish} className="glass-card" style={{ padding: 16 }}>
         <Form.Item name="email" label="이메일" rules={[{ required: true }, { type: 'email' }]}>
           <Input placeholder="you@example.com" />
         </Form.Item>
