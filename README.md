@@ -1,70 +1,33 @@
-# Getting Started with Create React App
+# 🛵 BaeYo (배요) - 배달 공동구매 플랫폼
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 🌟 프로젝트 소개
 
-## Available Scripts
+BaeYo는 **이웃과 함께하는 스마트한 배달 공동구매 플랫폼**입니다. 혼자 시키기 부담스러웠던 최소 주문 금액, 비싼 배달비 때문에 망설였던 메뉴들을 이웃과 함께 구매하여 저렴하고 편리하게 즐길 수 있도록 돕습니다. 지역 기반의 공동구매를 통해 배달 비용을 절감하고, 불필요한 일회용품 사용을 줄여 환경 보호에도 기여하고자 합니다.
 
-In the project directory, you can run:
+## ✨ 주요 기능
 
-### `npm start`
+* **지역 기반 공동구매:** 사용자 위치를 기반으로 주변에서 진행 중인 공동구매를 탐색하고 참여할 수 있습니다.
+* **쉬운 공동구매 개설:** 원하는 메뉴와 최소 인원을 설정하여 쉽게 공동구매를 개설할 수 있습니다.
+* **실시간 채팅:** 공동구매 참여자들 간의 실시간 채팅을 통해 주문 상황을 공유하고 소통할 수 있습니다.
+* **배달비 절감:** 여러 명이 함께 주문하여 배달비를 나누어 부담함으로써 비용을 절감합니다.
+* **다양한 카테고리:** 치킨, 피자, 중식, 한식 등 다양한 배달 음식 카테고리를 제공합니다.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🚀 기술 스택
 
-### `npm test`
+이 프로젝트는 다음과 같은 기술 스택을 활용하여 개발되었습니다.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Frontend
+* **Framework/Library:** [React](https://reactjs.org/) (또는 Vue.js, Angular 등 해당 프레임워크 명시)
+* **Language:** [JavaScript](https://developer.mozilla.org/ko/docs/Web/JavaScript) (또는 TypeScript)
+* **Styling:** [CSS Modules](https://github.com/css-modules/css-modules) (또는 Styled Components, Sass 등)
+* **UI Library :** [Material-UI](https://mui.com/) / [Ant Design](https://ant.design/) / Custom UI
 
-### `npm run build`
+### Backend (현재는 정적 호스팅이므로 추후 계획)
+* **Language:** [Node.js](https://nodejs.org/ko/)
+* **Framework:** [Express.js](https://expressjs.com/) (또는 NestJS, Spring Boot 등)
+* **Database:** [MongoDB](https://www.mongodb.com/) (또는 PostgreSQL, MySQL 등)
+* **Authentication:** [JWT](https://jwt.io/) (JSON Web Tokens)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Deployment & Hosting
+* **Platform:** [Firebase Hosting](https://firebase.google.com/docs/hosting)
