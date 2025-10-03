@@ -12,19 +12,94 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useAuth } from '../../contexts/AuthContext';
+import authService from '../../services/authService';
+import uploadService from '../../services/uploadService';
+import { useEffect } from 'react';
 
 export default function ProfileEditScreen() {
   const router = useRouter();
-  const [name, setName] = useState('김배요');
-  const [email, setEmail] = useState('baeyo@example.com');
-  const [phone, setPhone] = useState('010-1234-5678');
-  const [address, setAddress] = useState('경기도 하남시 미사강변한강로 85');
+  const { user, refreshUser } = useAuth();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    // 여기서 실제로는 서버에 저장
-    Alert.alert('성공', '프로필이 수정되었습니다.', [
-      { text: '확인', onPress: () => router.back() }
-    ]);
+  useEffect(() => {
+    if (user) {
+      setName(user.fullName || user.username || '');
+      setEmail(user.email || '');
+      setPhone(user.phone || '');
+      setAddress(user.address || '');
+      setAvatar(user.avatar ? `http://112.170.204.205:3001${user.avatar}` : null);
+    }
+  }, [user]);
+
+  const pickImage = async () => {
+    try {
+      // 권한 요청
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        Alert.alert('권한 필요', '사진 참조가 위해 균러리 액세스 권한이 필요합니다.');
+        return;
+      }
+
+      // 이미지 선택
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setLoading(true);
+        try {
+          const response = await uploadService.updateProfileImage(result.assets[0].uri);
+          setAvatar(`http://112.170.204.205:3001${response.fileUrl}`);
+          await refreshUser(); // 사용자 정보 새로고침
+          Alert.alert('성공', '프로필 사진이 업데이트되었습니다.');
+        } catch (error) {
+          console.error('프로필 사진 업로드 실패:', error);
+          Alert.alert('오류', '프로필 사진 업로드에 실패했습니다.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    } catch (error) {
+      console.error('이미지 선택 오류:', error);
+      Alert.alert('오류', '이미지를 선택할 수 없습니다.');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      Alert.alert('오류', '이름을 입력해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await authService.updateProfile({
+        fullName: name.trim(),
+        phone: phone.trim() || undefined,
+        address: address.trim() || undefined,
+      });
+      
+      await refreshUser(); // 사용자 정보 새로고침
+      Alert.alert('성공', '프로필이 수정되었습니다.', [
+        { text: '확인', onPress: () => router.back() }
+      ]);
+    } catch (error: any) {
+      console.error('프로필 업데이트 실패:', error);
+      const errorMessage = error.response?.data?.error || '프로필 업데이트에 실패했습니다.';
+      Alert.alert('오류', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,8 +110,14 @@ export default function ProfileEditScreen() {
           <Ionicons name="chevron-back" size={24} color="#374151" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>프로필 수정</Text>
-        <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-          <Text style={styles.saveButtonText}>저장</Text>
+        <TouchableOpacity 
+          onPress={handleSave} 
+          style={[styles.saveButton, loading && styles.disabledButton]}
+          disabled={loading}
+        >
+          <Text style={[styles.saveButtonText, loading && styles.disabledText]}>
+            {loading ? '저장 중...' : '저장'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -44,10 +125,18 @@ export default function ProfileEditScreen() {
         {/* 프로필 사진 */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarContainer}>
-            <View style={styles.defaultAvatar}>
-              <Ionicons name="person" size={40} color="#6b7280" />
-            </View>
-            <TouchableOpacity style={styles.avatarEditButton}>
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.defaultAvatar}>
+                <Ionicons name="person" size={40} color="#6b7280" />
+              </View>
+            )}
+            <TouchableOpacity 
+              style={styles.avatarEditButton} 
+              onPress={pickImage}
+              disabled={loading}
+            >
               <Ionicons name="camera" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -167,6 +256,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fb923c',
   },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  disabledText: {
+    color: '#9ca3af',
+  },
   scrollView: {
     flex: 1,
   },
@@ -180,6 +275,11 @@ const styles = StyleSheet.create({
   avatarContainer: {
     position: 'relative',
     marginBottom: 12,
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   defaultAvatar: {
     width: 80,

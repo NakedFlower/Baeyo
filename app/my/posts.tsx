@@ -11,6 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getImageByName } from '@/utils/imageUtils';
+import { useAuth } from '../../contexts/AuthContext';
+import postService, { Post } from '../../services/postService';
+import { useEffect } from 'react';
 
 interface MyPost {
   id: string;
@@ -24,7 +27,29 @@ interface MyPost {
 
 export default function MyPostsScreen() {
   const router = useRouter();
-  const [posts] = useState<MyPost[]>([
+  const { user, isAuthenticated } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadMyPosts();
+    }
+  }, [isAuthenticated]);
+
+  const loadMyPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await postService.getMyPosts();
+      setPosts(response.posts);
+    } catch (error) {
+      console.error('내 게시글 로드 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const samplePosts = [
     {
       id: '1',
       name: '족발/보쌈 하프&하프',
@@ -43,23 +68,32 @@ export default function MyPostsScreen() {
       maxParticipants: 4,
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
     },
-  ]);
+  ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case '모집중': return '#fb923c';
-      case '모집완료': return '#10b981';
-      case '진행중': return '#3b82f6';
+      case 'RECRUITING': case '모집중': return '#fb923c';
+      case 'COMPLETED': case '모집완료': return '#10b981';
+      case 'CANCELLED': case '진행중': return '#6b7280';
       default: return '#6b7280';
     }
   };
 
-  const renderPost = ({ item }: { item: MyPost }) => (
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'RECRUITING': return '모집중';
+      case 'COMPLETED': return '완료';
+      case 'CANCELLED': return '취소';
+      default: return status;
+    }
+  };
+
+  const renderPost = ({ item }: { item: Post }) => (
     <TouchableOpacity style={styles.postCard}>
       <View style={styles.postImageContainer}>
-        {item.cover && getImageByName(item.cover) ? (
+        {item.imageUrl ? (
           <Image
-            source={getImageByName(item.cover)}
+            source={{ uri: `http://112.170.204.205:3001${item.imageUrl}` }}
             style={styles.postImage}
             resizeMode="cover"
           />
@@ -69,16 +103,19 @@ export default function MyPostsScreen() {
           </View>
         )}
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status}</Text>
+          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
         </View>
       </View>
       <View style={styles.postContent}>
-        <Text style={styles.postTitle}>{item.name}</Text>
+        <Text style={styles.postTitle}>{item.title}</Text>
+        <Text style={styles.priceInfo}>
+          가격: {item.price.toLocaleString()}원
+        </Text>
         <Text style={styles.participantInfo}>
-          참여자: {item.participants}/{item.maxParticipants}명
+          참여자: {item.currentPeople}/{item.maxPeople}명
         </Text>
         <Text style={styles.postDate}>
-          {item.createdAt.toLocaleDateString('ko-KR')}
+          {new Date(item.createdAt).toLocaleDateString('ko-KR')}
         </Text>
       </View>
     </TouchableOpacity>
@@ -94,19 +131,25 @@ export default function MyPostsScreen() {
         <View style={{ width: 32 }} />
       </View>
 
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="document-text-outline" size={48} color="#d1d5db" />
-            <Text style={styles.emptyText}>작성한 모집글이 없습니다</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <Text>로드 중...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={posts}
+          renderItem={renderPost}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="document-text-outline" size={48} color="#d1d5db" />
+              <Text style={styles.emptyText}>작성한 모집글이 없습니다</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -182,14 +225,26 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 8,
   },
+  priceInfo: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fb923c',
+    marginBottom: 4,
+  },
   participantInfo: {
     fontSize: 14,
-    color: '#fb923c',
+    color: '#10b981',
     marginBottom: 4,
   },
   postDate: {
     fontSize: 12,
     color: '#9ca3af',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
   },
   emptyContainer: {
     alignItems: 'center',

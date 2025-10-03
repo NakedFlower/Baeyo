@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../../contexts/AuthContext';
+import { useEffect } from 'react';
 
 interface UserProfile {
   name: string;
@@ -34,12 +36,10 @@ interface MenuItem {
 
 export default function MyScreen() {
   const router = useRouter();
-  const [user] = useState<UserProfile>({
-    name: '김배요',
-    email: 'baeyo@example.com',
-    joinDate: new Date('2024-01-15'),
-    totalParticipations: 23,
-    totalSavings: 156000,
+  const { user: authUser, logout } = useAuth();
+  const [userStats, setUserStats] = useState({
+    totalParticipations: 0,
+    totalSavings: 0,
   });
 
   const [notificationEnabled, setNotificationEnabled] = useState(true);
@@ -157,8 +157,11 @@ export default function MyScreen() {
         >
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
-              {user.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.avatar} />
+              {authUser?.avatar ? (
+                <Image 
+                  source={{ uri: `http://112.170.204.205:3001${authUser.avatar}` }}
+                  style={styles.avatar} 
+                />
               ) : (
                 <View style={styles.defaultAvatar}>
                   <Ionicons name="person" size={36} color="#fff" />
@@ -166,10 +169,12 @@ export default function MyScreen() {
               )}
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.userEmail}>{user.email}</Text>
+              <Text style={styles.userName}>
+                {authUser?.fullName || authUser?.username || '사용자'}
+              </Text>
+              <Text style={styles.userEmail}>{authUser?.email}</Text>
             <Text style={styles.joinDate}>
-              {formatJoinDate(user.joinDate)}
+              {authUser?.createdAt && formatJoinDate(new Date(authUser.createdAt))}
             </Text>
           </View>
           </View>
@@ -177,13 +182,13 @@ export default function MyScreen() {
           {/* 통계 섹션 */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user.totalParticipations}</Text>
+              <Text style={styles.statValue}>{userStats.totalParticipations}</Text>
               <Text style={styles.statLabel}>참여한 공구</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
-                {(user.totalSavings / 10000).toFixed(0)}만원
+                {(userStats.totalSavings / 10000).toFixed(0)}만원
               </Text>
               <Text style={styles.statLabel}>절약한 금액</Text>
             </View>
@@ -217,7 +222,20 @@ export default function MyScreen() {
             onPress={() =>
               Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
                 { text: '취소', style: 'cancel' },
-                { text: '로그아웃', style: 'destructive' },
+                { 
+                  text: '로그아웃', 
+                  style: 'destructive', 
+                  onPress: async () => {
+                    try {
+                      await logout();
+                      console.log('로그아웃 완료 - 로그인 화면으로 이동');
+                      // 강제로 로그인 화면으로 이동
+                      router.replace('/auth/login');
+                    } catch (error) {
+                      console.error('로그아웃 오류:', error);
+                    }
+                  }
+                },
               ])
             }
           >

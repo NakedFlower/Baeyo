@@ -9,7 +9,9 @@ import {
   Image,
   FlatList,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,6 +27,8 @@ import {
   LocationCoordinates,
   PickupLocation 
 } from '@/utils/locationUtils';
+import postService, { Post } from '../../services/postService';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface GroupBuyItem {
   id: string;
@@ -32,53 +36,56 @@ interface GroupBuyItem {
   cover?: string;
   createdBy: string;
   createdAt: Date;
+  price?: number;
 }
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
+  const { user } = useAuth();
   const [searchText, setSearchText] = useState('');
-  const [recentPosts, setRecentPosts] = useState<GroupBuyItem[]>([]);
+  const [recentPosts, setRecentPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<LocationCoordinates | null>(null);
   const [currentAddress, setCurrentAddress] = useState<string>('위치 조회 중...');
   const [nearbyPickupLocations, setNearbyPickupLocations] = useState<PickupLocation[]>([]);
 
-  // 샘플 데이터 생성 및 위치 정보 로드
+  // 실제 데이터 로드 (인증된 사용자만)
   useEffect(() => {
-    const loadData = async () => {
-      // 샘플 데이터 설정
-      const sampleData: GroupBuyItem[] = [
-        {
-          id: '1',
-          name: '후라이드 치킨 2마리',
-          cover: 'chicken',
-          createdBy: '치킨러버123',
-          createdAt: new Date(),
-        },
-        {
-          id: '2',
-          name: '마라탕 4인분 모음',
-          cover: 'ddbbii',
-          createdBy: '마라탕매니아',
-          createdAt: new Date(),
-        },
-        {
-          id: '3',
-          name: '수제버거 세트',
-          cover: 'hamburger',
-          createdBy: '버거킹',
-          createdAt: new Date(),
-        },
-        {
-          id: '4',
-          name: '피자 라지 2판',
-          cover: 'pizza',
-          createdBy: '피자마니아',
-          createdAt: new Date(),
-        },
-      ];
-      setRecentPosts(sampleData);
+    if (user) {
+      loadInitialData();
+    }
+  }, [user]);
+
+  // 화면에 포커스될 때마다 데이터 새로고침
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        console.log('홈 화면에 포커스 - 데이터 새로고침');
+        loadPostsOnly();
+      }
+    }, [user])
+  );
+
+  const loadInitialData = async () => {
+    if (!user) {
+      console.log('인증되지 않은 사용자 - 데이터 로드 건너뜠');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // 최근 게시글 로드 (최신 순)
+      const postsResponse = await postService.getPosts({ 
+        page: 1, 
+        limit: 10,
+        status: 'RECRUITING',
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      });
+      setRecentPosts(postsResponse.posts);
+      console.log('게시글 로드 성공:', postsResponse.posts.length, '개');
 
       // 현재 위치 가져오기
       const location = await getCurrentLocation();
@@ -96,17 +103,55 @@ export default function HomeScreen() {
         setCurrentAddress('위치 근처 범위');
         setNearbyPickupLocations(samplePickupLocations.slice(0, 3));
       }
-    };
-    
-    loadData();
-  }, []);
+    } catch (error) {
+      console.error('데이터 로드 실패:', error);
+      // 사용자에게 오류 알림
+      setRecentPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const renderRecentItem = ({ item }: { item: GroupBuyItem }) => (
+  // 게시물만 로드하는 함수 (더 빠른 새로고침용)
+  const loadPostsOnly = async () => {
+    if (!user) return;
+    
+    try {
+      const postsResponse = await postService.getPosts({ 
+        page: 1, 
+        limit: 10,
+        status: 'RECRUITING',
+        sortBy: 'createdAt', // 최신 순으로 정렬
+        sortOrder: 'desc'
+      });
+      setRecentPosts(postsResponse.posts);
+      console.log('게시물 새로고침 성공:', postsResponse.posts.length, '개');
+    } catch (error) {
+      console.error('게시물 로드 실패:', error);
+    }
+  };
+
+  // Pull-to-refresh 함수
+  const onRefresh = React.useCallback(async () => {
+    if (!user) return;
+    
+    setRefreshing(true);
+    try {
+      console.log('Pull-to-refresh - 데이터 새로고침');
+      await loadPostsOnly();
+    } catch (error) {
+      console.error('새로고침 실패:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  const renderRecentItem = ({ item }: { item: Post }) => (
     <TouchableOpacity style={styles.postCard}>
       <View style={styles.postImageContainer}>
-        {item.cover && getImageByName(item.cover) ? (
+        {item.imageUrl ? (
           <Image
-            source={getImageByName(item.cover)}
+            source={{ uri: `http://112.170.204.205:3001${item.imageUrl}` }}
             style={styles.postImage}
             resizeMode="cover"
           />
@@ -116,14 +161,20 @@ export default function HomeScreen() {
           </View>
         )}
         <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>모집중</Text>
+          <Text style={styles.statusText}>
+            {item.status === 'RECRUITING' ? '모집중' : item.status === 'COMPLETED' ? '완료' : '취소'}
+          </Text>
         </View>
       </View>
       <View style={styles.postInfo}>
         <Text style={styles.postTitle} numberOfLines={2}>
-          {item.name}
+          {item.title}
         </Text>
-        <Text style={styles.postAuthor}>작성자: {item.createdBy}</Text>
+        <Text style={styles.postPrice}>가격: {item.price.toLocaleString()}원</Text>
+        <Text style={styles.postAuthor}>작성자: {item.author.username}</Text>
+        <Text style={styles.postParticipants}>
+          참여자: {item.currentPeople}/{item.maxPeople}명
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -198,7 +249,20 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#fb923c']}
+            tintColor={'#fb923c'}
+            title="데이터를 새로고침하는 중..."
+            titleColor={'#fb923c'}
+          />
+        }
+      >
         {/* 헤더 섹션 */}
         <LinearGradient
           colors={['#ffedd5', '#fff7ed']}
@@ -438,9 +502,21 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 8,
   },
+  postPrice: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fb923c',
+    marginBottom: 4,
+  },
   postAuthor: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#6b7280',
+    marginBottom: 2,
+  },
+  postParticipants: {
+    fontSize: 13,
+    color: '#10b981',
+    fontWeight: '500',
   },
   sponsorBadge: {
     position: 'absolute',
