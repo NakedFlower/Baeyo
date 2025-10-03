@@ -11,3 +11,41 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Global sizes */
+html, body, #root {
+  height: 100%;
+}
+
+.app-layout {
+  min-height: 100%;
+  background: #fff7ed; /* warm light background */
+}
+
+.app-header {
+  background: #ffedd5; /* light peach */
+  padding: 16px 24px;
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-content {
+  padding: 24px;
+}
+
+.glass-card {
+  background: #ffffff;
+  border: 1px solid #ffe4c7;
+  box-shadow: 0 8px 22px rgba(253, 186, 116, 0.25);
+  border-radius: 14px;
+}
+
+.section-title {
+  color: #1f2937;
+  font-weight: 800;
+  margin: 0 0 16px 0;
+}

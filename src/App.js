@@ -1,58 +1,80 @@
-import React, { useState, useEffect } from "react";
-import { auth, login, logout, db } from "./firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { collection, addDoc, onSnapshot } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { Layout, Menu, Button, theme, ConfigProvider, Skeleton, Avatar } from "antd";
+import { HomeOutlined, ShoppingOutlined, MessageOutlined, UserOutlined, LoginOutlined, LogoutOutlined } from "@ant-design/icons";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { subscribeAuth, logout } from "./firebase";
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [rooms, setRooms] = useState([]);
+const { Header, Content, Footer } = Layout;
 
-  // 로그인 상태 추적
+function AppShell() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+
   useEffect(() => {
-    onAuthStateChanged(auth, (u) => setUser(u));
-  }, []);
-
-  // 방 불러오기 (실시간 업데이트)
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "rooms"), (snapshot) => {
-      setRooms(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    const unsub = subscribeAuth((u) => {
+      setCurrentUser(u);
+      setLoading(false);
     });
-    return unsub;
+    return () => unsub && unsub();
   }, []);
 
-  // 방 만들기
-  const createRoom = async () => {
-    const roomName = prompt("방 이름을 입력하세요");
-    if (roomName) {
-      await addDoc(collection(db, "rooms"), {
-        name: roomName,
-        createdBy: user.email,
-        createdAt: new Date()
-      });
-    }
-  };
+  const items = [
+    { key: "/", icon: <HomeOutlined />, label: <Link to="/">홈</Link> },
+    { key: "/groupbuy", icon: <ShoppingOutlined />, label: <Link to="/groupbuy">공동구매</Link> },
+    { key: "/chat", icon: <MessageOutlined />, label: <Link to="/chat">채팅</Link> },
+    { key: "/my", icon: <UserOutlined />, label: <Link to="/my">MY</Link> }
+  ];
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>🍔 배달 공동구매</h1>
-      {user ? (
-        <>
-          <p>환영합니다 {user.displayName}님</p>
-          <button onClick={logout}>로그아웃</button>
-          <hr />
-          <button onClick={createRoom}>방 만들기</button>
-          <h2>방 목록</h2>
-          <ul>
-            {rooms.map((room) => (
-              <li key={room.id}>{room.name} (생성자: {room.createdBy})</li>
-            ))}
-          </ul>
-        </>
-      ) : (
-        <button onClick={login}>구글 로그인</button>
-      )}
-    </div>
+    <Layout className="app-layout">
+      <Header className="app-header" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div className="app-logo">
+          <img src="/baeyo.png" alt="BaeYo" height="26" />
+        </div>
+        <Menu
+          theme="dark"
+          mode="horizontal"
+          selectedKeys={[location.pathname]}
+          items={items}
+          style={{ flex: 1, background: "transparent" }}
+        />
+        {loading ? (
+          <Skeleton.Avatar active size="small" />
+        ) : currentUser ? (
+          <Avatar src={currentUser.photoURL} icon={<UserOutlined />} />
+        ) : (
+          <Link to="/login">
+            <Button icon={<LoginOutlined />}>로그인</Button>
+          </Link>
+        )}
+      </Header>
+      <Content className="app-content">
+        <div className="glass-card" style={{ padding: 24 }}>
+          <Outlet />
+        </div>
+      </Content>
+      <Footer style={{ textAlign: "center", color: "#94a3b8", background: "transparent" }}>
+        © {new Date().getFullYear()} 공동구매 플랫폼
+      </Footer>
+    </Layout>
   );
 }
 
-export default App;
+export default function App() {
+  const antdTheme = {
+    token: {
+      colorPrimary: "#fb923c", /* orange-400 */
+      colorBgBase: "#fff7ed",
+      colorTextBase: "#1f2937",
+      borderRadius: 10
+    },
+    algorithm: theme.defaultAlgorithm
+  };
+
+  return (
+    <ConfigProvider theme={antdTheme}>
+      <AppShell />
+    </ConfigProvider>
+  );
+}

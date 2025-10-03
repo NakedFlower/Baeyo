@@ -1,6 +1,6 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // 🔽 여기 firebaseConfig는 콘솔에서 복사한 값 붙여넣기
@@ -22,3 +22,9 @@ export const db = getFirestore(app);
 // 로그인 함수
 export const login = () => signInWithPopup(auth, provider);
 export const logout = () => signOut(auth);
+
+// 이메일/비밀번호 인증 유틸
+export const signupWithEmail = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+export const loginWithEmail = (email, password) => signInWithEmailAndPassword(auth, email, password);
+export const resetPassword = (email) => sendPasswordResetEmail(auth, email);
+export const subscribeAuth = (callback) => onAuthStateChanged(auth, callback);
